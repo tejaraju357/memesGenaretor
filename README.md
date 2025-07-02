@@ -9,3 +9,4 @@ A fun and interactive Meme Generator built with **React.js**. Users can view ran
 - 🖼️ Live meme preview with overlayed text
 - 💾 Download or screenshot your created memes
 - 📱 Responsive design for mobile and desktop
+  ![image](https://github.com/user-attachments/assets/db4f6587-ef28-4df5-bbb1-ec2b0983a863)
