@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import './Studio.css';
+import { API_BASE_URL, getMemeUrl } from '../config';
 
 const FONTS = ['Impact', 'Arial', 'Comic Sans MS', 'Verdana', 'Georgia', 'Courier New', 'Outfit', 'Inter', 'Times New Roman', 'Trebuchet MS'];
 const STICKERS = ['😂','🔥','💀','👀','😭','🤣','😤','🤔','😎','🥴','💯','🚀','👑','⚡','🌈','🎉','🤦','🙃','😈','🧠','🫡','🤯','💅','🗿','🤌','🫶','💀','🎭','🐸','🦋'];
@@ -58,7 +59,7 @@ export default function Studio({ initialState, onSaved, addToast }) {
 
   // Fetch templates
   useEffect(() => {
-    fetch('/api/templates')
+    fetch(`${API_BASE_URL}/api/templates`)
       .then(r => r.json())
       .then(data => { setTemplates(data); setLoadingTemplates(false); })
       .catch(() => setLoadingTemplates(false));
@@ -89,7 +90,7 @@ export default function Studio({ initialState, onSaved, addToast }) {
       setCurrentImage(url);
     };
     img.onerror = () => addToast('Failed to load image', 'error');
-    img.src = url;
+    img.src = getMemeUrl(url);
   }, [addToast]);
 
   // Create blank canvas
@@ -515,7 +516,7 @@ export default function Studio({ initialState, onSaved, addToast }) {
       const canvas = canvasRef.current;
       const imageData = imageDataOverride || canvas.toDataURL('image/png');
       const state = { texts, stickers, drawPaths, templateUrl: currentImage, canvasBg };
-      const res = await fetch('/api/memes', {
+      const res = await fetch(`${API_BASE_URL}/api/memes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageData, state, templateUrl: currentImage, title: `Meme - ${new Date().toLocaleTimeString()}` })

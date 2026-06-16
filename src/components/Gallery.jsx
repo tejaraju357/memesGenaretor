@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import './Gallery.css';
+import { API_BASE_URL, getMemeUrl } from '../config';
 
 export default function Gallery({ onReEdit, addToast, refreshTrigger }) {
   const [memes, setMemes] = useState([]);
@@ -10,7 +11,7 @@ export default function Gallery({ onReEdit, addToast, refreshTrigger }) {
   const fetchMemes = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/memes');
+      const res = await fetch(`${API_BASE_URL}/api/memes`);
       const data = await res.json();
       setMemes(data);
     } catch {
@@ -26,7 +27,7 @@ export default function Gallery({ onReEdit, addToast, refreshTrigger }) {
     if (!window.confirm('Delete this meme? This cannot be undone.')) return;
     setDeleting(id);
     try {
-      await fetch(`/api/memes/${id}`, { method: 'DELETE' });
+      await fetch(`${API_BASE_URL}/api/memes/${id}`, { method: 'DELETE' });
       setMemes(prev => prev.filter(m => m.id !== id));
       addToast('Meme deleted', 'info');
       if (viewMeme?.id === id) setViewMeme(null);
@@ -37,12 +38,30 @@ export default function Gallery({ onReEdit, addToast, refreshTrigger }) {
     }
   };
 
-  const downloadMeme = (url, title) => {
-    const link = document.createElement('a');
-    link.download = `${title || 'meme'}.png`;
-    link.href = url;
-    link.click();
-    addToast('⬇️ Downloading...', 'success');
+  const downloadMeme = async (url, title) => {
+    addToast('⬇️ Downloading...', 'info');
+    try {
+      const fullUrl = getMemeUrl(url);
+      const response = await fetch(fullUrl);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${title || 'meme'}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      addToast('🎉 Download completed!', 'success');
+    } catch (err) {
+      console.error(err);
+      const link = document.createElement('a');
+      link.download = `${title || 'meme'}.png`;
+      link.href = getMemeUrl(url);
+      link.target = '_blank';
+      link.click();
+      addToast('Opened in new tab to download', 'info');
+    }
   };
 
   const formatDate = (iso) => {
@@ -93,7 +112,7 @@ export default function Gallery({ onReEdit, addToast, refreshTrigger }) {
           {memes.map(m => (
             <div key={m.id} className="gallery-card" onClick={() => setViewMeme(m)}>
               <div className="gallery-card-img-wrap">
-                <img src={m.url} alt={m.title} className="gallery-card-img" loading="lazy" />
+                <img src={getMemeUrl(m.url)} alt={m.title} className="gallery-card-img" loading="lazy" />
                 <div className="gallery-card-overlay">
                   <button className="btn btn-primary btn-sm" onClick={e => { e.stopPropagation(); onReEdit(m); }}>
                     ✏️ Re-Edit
@@ -135,7 +154,7 @@ export default function Gallery({ onReEdit, addToast, refreshTrigger }) {
         <div className="lightbox" onClick={() => setViewMeme(null)}>
           <div className="lightbox-content" onClick={e => e.stopPropagation()}>
             <button className="lightbox-close" onClick={() => setViewMeme(null)}>✕</button>
-            <img src={viewMeme.url} alt={viewMeme.title} className="lightbox-img" />
+            <img src={getMemeUrl(viewMeme.url)} alt={viewMeme.title} className="lightbox-img" />
             <div className="lightbox-info">
               <p className="lightbox-title">{viewMeme.title}</p>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 14 }}>

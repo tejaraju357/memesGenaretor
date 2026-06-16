@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import './Feed.css';
+import { API_BASE_URL } from '../config';
 
 const SUBREDDITS = [
   { id: 'memes', label: '🔥 Hot Memes', emoji: '🔥' },
@@ -22,7 +23,7 @@ export default function Feed({ onSelectTemplate, addToast }) {
     if (!append) { setLoading(true); setMemes([]); }
     else setLoadingMore(true);
     try {
-      const res = await fetch(`/api/reddit-memes/${sub}`);
+      const res = await fetch(`${API_BASE_URL}/api/reddit-memes/${sub}`);
       const data = await res.json();
       const filtered = (data || []).filter(m =>
         m.url && (m.url.endsWith('.jpg') || m.url.endsWith('.jpeg') || m.url.endsWith('.png') || m.url.endsWith('.gif') || m.url.includes('redd.it') || m.url.includes('i.redd.it'))
