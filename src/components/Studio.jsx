@@ -362,18 +362,27 @@ export default function Studio({ initialState, onSaved, addToast }) {
   }, []);
 
   const handleCanvasMouseDown = useCallback((e) => {
-    e.preventDefault();
     if (inlineEdit) { closeInlineEdit(); return; }
     const pos = getCanvasPos(e);
+    const textId = hitTestText(pos);
+    const stickerId = hitTestSticker(pos);
+    const isDrawTool = tool === 'draw' || tool === 'erase';
+
+    // Only preventDefault if it is a mouse click (to prevent text selection)
+    // or if the user is tapping a valid draggable element or drawing.
+    // This allows natural scrolling on blank canvas space for mobile.
+    if (e.type === 'mousedown' || textId || stickerId || isDrawTool) {
+      if (e.cancelable) e.preventDefault();
+    }
+
     dragMoved.current = false;
 
-    if (tool === 'draw' || tool === 'erase') {
+    if (isDrawTool) {
       setIsDrawing(true);
       setDrawPaths(prev => [...prev, { points: [pos], color: brushColor, size: brushSize, erase: tool === 'erase' }]);
       return;
     }
 
-    const textId = hitTestText(pos);
     if (textId) {
       setSelectedTextId(textId);
       setSelectedStickerId(null);
@@ -382,7 +391,6 @@ export default function Studio({ initialState, onSaved, addToast }) {
       setActiveRightTab('text');
       return;
     }
-    const stickerId = hitTestSticker(pos);
     if (stickerId) {
       setSelectedStickerId(stickerId);
       setSelectedTextId(null);
@@ -395,7 +403,9 @@ export default function Studio({ initialState, onSaved, addToast }) {
   }, [inlineEdit, closeInlineEdit, getCanvasPos, tool, brushColor, brushSize, hitTestText, hitTestSticker, texts, stickers]);
 
   const handleCanvasMouseMove = useCallback((e) => {
-    e.preventDefault();
+    if (!isDrawing && !dragging) return;
+
+    if (e.cancelable) e.preventDefault();
     const pos = getCanvasPos(e);
 
     if (isDrawing && (tool === 'draw' || tool === 'erase')) {
